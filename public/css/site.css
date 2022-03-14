@@ -1,0 +1,23 @@
+.section-gap {
+            margin-top:100px;
+        }
+.del {
+    position:absolute;
+    right:10px;
+    top:-10px;
+}
+.edit {
+    position:absolute;
+    right:50px;
+    top:-10px;
+}
+.add {
+    margin-bottom:20px;
+    margin-left:15px;
+}
+.card {
+    margin-bottom: 30px;
+}
+[v-cloak] {
+    display: none;
+}

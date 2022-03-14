@@ -1,0 +1,104 @@
+{% extends 'layout2.html' %}
+{% block title %}
+    {{title}}
+{% endblock %}
+{% block body %}
+
+<form id="app" v-cloak="true" class="form-signin">
+    
+
+    <div class="text-center mb-4">
+        <h1 class="h3 mb-3 font-weight-normal">Sertis</h1>
+        <p>Account Registration </p>
+    </div>
+    <div v-if="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+         [@error_msg]
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="form-label-group">
+        
+        <input type="text" id="username" v-model="username" class="form-control " placeholder="Please Enter Username" required autofocus>
+        <label for="username">Username</label>
+        <span class="invalid-feedback">Please enter Username</span>
+    </div>
+
+    <div v-if="stage == 2" class="form-label-group">
+        <input type="text" id="password" v-model="password" class="form-control" placeholder="Password" required>
+        <label for="password">Password</label>
+    </div>
+
+   
+    <button v-if="stage == 1" @click="generatePass()" class="btn btn-lg btn-primary btn-block" type="button">Generate Password</button>
+    <button v-if="stage == 2" @click="submit()" class="btn btn-lg btn-primary btn-block" type="button">Create</button>
+    <p class="mt-5 mb-3 text-muted text-center">Already Have an account?&nbsp;Please Sign In <a href="/login">Here &laquo;</a></p>
+</form>
+
+{% endblock %}
+{% block javascript %}
+<script>
+    Vue.createApp({
+        data() {
+            return {
+                username: '',
+                password: '',
+                error: 0,
+                error_msg : '',
+                stage : 1,
+
+            }
+        },
+        delimiters : ["[@", ']'],
+        created() {
+            that = this;
+        },
+        methods: {
+            generatePass : function () {
+                if(that.username.trim() == "") {
+                    $('#username').addClass('is-invalid');
+                    return false;
+                }
+
+                $('input').removeClass('is-invalid').addClass('is-valid');
+                jQuery.ajax({
+                    url: '/register/ajax/generatePassword',
+                    type: 'post',
+                    success: function(response) {
+                        if(response.success == 1) {
+                            that.password = response.password;
+                            that.stage = 2;
+                        }
+                        
+                    }
+
+                })
+                
+            },
+            submit :  function() {
+                jQuery.ajax({
+                    url: '/register/ajax/submit',
+                    type: 'post',
+                    data : { 
+                        username: that.username,
+                        password: that.password,
+                    },
+                    success: function (res) {
+                        if(res.error == 1) {
+                            that.error = 1;
+                            that.error_msg = res.error_msg; 
+                        } else if(res.success == 1) {
+                            $(location).attr('href', '/');
+                        }
+                        
+                    },
+                    dataType: 'JSON'
+                })
+
+               
+            }
+        }
+        
+    }).mount('#app')
+</script>
+{% endblock %}

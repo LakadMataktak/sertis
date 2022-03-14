@@ -1,0 +1,79 @@
+{% extends 'layout2.html' %}
+{% block title %}
+{{title}}
+{% endblock %}
+{% block body %}
+<section id="app"  v-cloak="true">
+    <form id="app" class="form-signin">
+        <div class="text-center mb-4">
+            
+            <h1 class="h3 mb-3 font-weight-normal">Sertis</h1>
+            <p><code>Please login into an account </code></p>
+        </div>
+        <div v-if="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+            [@error_msg]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+        <div class="form-label-group">
+            <input type="text" id="inputUsername" v-model="username" class="form-control" placeholder="Email address" required autofocus>
+            <label for="inputUsername">Username</label>
+        </div>
+
+        <div class="form-label-group">
+            <input type="password" id="inputPassword" v-model="password" class="form-control" placeholder="Password" required>
+            <label for="inputPassword">Password</label>
+        </div>
+
+        <button class="btn btn-lg btn-primary btn-block" type="button" @click="submit">Sign in</button>
+        <p class="mt-5 mb-3 text-muted text-center">Don't have an account yet? Register <a href="/register">Here &laquo;.</p>
+    </form>
+</section>
+{% endblock %}
+{% block javascript %}
+
+<script type="text/javascript">
+    Vue.createApp({
+        data() {
+            return {
+                username: '',
+                password: '',
+                error: 0,
+                error_msg: '',
+
+            }
+        },
+        delimiters: ["[@", ']'],
+        created() {
+            that = this;
+        },
+        methods: {
+            submit: function () {
+                jQuery.ajax({
+                    url: '/login/ajax/submit',
+                    type: 'post',
+                    data: {
+                        username: that.username,
+                        password: that.password,
+                    },
+                    success: function (res) {
+                        if (res.error == 1) {
+                            that.error = 1;
+                            that.error_msg = res.error_msg;
+                        } else if (res.success == 1) {
+                            $(location).attr('href', '/');
+                        }
+
+                    },
+                    dataType: 'JSON'
+                })
+
+
+            }
+        }
+
+    }).mount('#app');
+</script>
+
+{% endblock %}

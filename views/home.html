@@ -1,0 +1,267 @@
+{% extends "layout.html" %}
+
+{% block title %}
+{{title}}
+{% endblock %}
+
+{% block body %}
+<section id="app" v-cloak="true">
+<div class="row">
+    <button type="button" class="btn btn-primary btn-sm add" data-toggle="modal" data-target="#modal"
+        data-whatever="@mdo"><i class="fa fa-plus"></i>&nbsp;Add Card</button>
+</div>
+<div v-if="loading" class="row">
+    <div class="col-md-12 text-center">
+        <button class="btn btn-primary" disabled>
+            <span class="spinner-border spinner-border-sm"></span>
+            Loading Cards..
+        </button>
+    </div>
+</div>
+
+<div v-if="error" class="row">
+    <div class="col-md-12 text-center">
+        <div class="alert alert-danger">
+            [@error_msg]
+        </div>
+    </div>
+</div>
+
+
+<div  v-if="cards">
+<div class="alert alert-info">
+    Sorted By DateTime (Descending)
+</div>
+<div class="row">
+    <div v-for="(each, index) in cards" class="col-md-4">
+        <div class="card">
+           
+            <div class="card-body">
+                <button v-if="each.owner" type="button" @click="editCard(each)" class="edit btn btn-info btn-sm"><i class="fa fa-edit"></i></button>
+                <button v-if="each.owner" type="button" @click="deleteCard(each)" class="del btn btn-danger btn-sm"><i class="fa fa-trash-o"></i></button>
+                <h5 class="card-title">[@each.name]</h5>
+    
+                <h6 class="card-subtitle mb-2 text-muted">Author : [@each.author]</h6>
+                <p class="card-text">[@each.content]</p>
+                <span class="badge badge-primary">[@each.categoryString]</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+</div>
+
+<!--- Modal --->
+<div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalLabel">[@form.title]</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id='cardForm'>
+                <div class="modal-body">
+                    <div v-if="form.error" class="alert alert-danger">
+                        [@form.error_msg]
+                    </div>
+                    <div class="form-group">
+                        <label for="name" class="col-form-label">Name:</label>
+                        <input type="text" v-model="name" class="form-control" id="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="category" class="col-form-label">Choose Category:</label>
+                        <select id="category" v-model="category" class="form-control" required>
+                            {% for each in Categories %}
+                            <option value="{{each.id}}">{{each.title}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="author" class="col-form-label">Author:</label>
+                        <input type="text" v-model="author" class="form-control" id="author" required readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="content" class="col-form-label">Content:</label>
+                        <textarea class="form-control" v-model="content" id="content" required></textarea>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" @click="cardSubmit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+</section>
+
+
+{% endblock %}
+
+{% block javascript %}
+
+<script type="text/javascript">
+    Vue.createApp({
+        data(){
+            return {
+                form : {
+                    title : 'New Card'
+                },
+                loading : true,
+                editing : false,
+                cards: '',
+                edit : false,
+                name: '',
+                doc_id : 0,
+                category: 1,
+                author: '{{userData["username"]}}',
+                content: '',
+            }
+        },
+        delimiters : ['[@',']'],
+        created() {
+            that = this;
+            that.getCards();
+            
+        },
+        mounted() {
+            console.log(that);
+            $('#modal').on('hidden.bs.modal', function (e) {
+                // do things when the modal is closed
+                console.log('hello');
+                that.name = '';
+                that.doc_id = 0;
+                that.category = 1;
+                that.edit = false;
+                that.author = '{{userData["username"]}}';
+                that.content = '';
+                that.form = { title : 'New Card'};
+            })
+        },
+        methods: {
+            getCards: () => {
+               
+                jQuery.ajax({
+                    url: '/home/ajax/getCards',
+                    type: 'get',
+                    success: function (res) {
+                        //let index = (that.cards).findIndex(x => x.doc_id === item.doc_id)
+                        that.loading = false;
+                        if(res.success == 1) {
+                            that.cards = res.posts;
+                        } else if(res.error == 1) {
+                            that.error = 1;
+                            that.error_msg = res.error_msg;
+                        }
+                        
+                    },
+                    dataType: 'json'
+                })
+            },
+            showToast : (msg, color = '#0069d9') => {
+                Toastify({
+                    text: msg,
+                    duration: 2000,
+                    destination: "https://github.com/apvarun/toastify-js",
+                    newWindow: true,
+                    close: true,
+                    // gravity: "top", // `top` or `bottom`
+                    position: "center", // `left`, `center` or `right`
+                    stopOnFocus: true, // Prevents dismissing of toast on hover
+                    style: {
+                        background: color,
+                    },
+                    close: false,
+                    offset: {
+                        y: 50 // vertical axis - can be a number or a string indicating unity. eg: '2em'
+                    },
+                    onClick: function () { } // Callback after click
+                }).showToast();
+            },
+            editCard: (item) => {
+                that.form.title = 'Edit Card';
+                $('#modal').modal('show');
+                that.name = item.name;
+                that.category = item.category;
+                that.author = item.author;
+                that.content = item.content;
+                that.doc_id = item.doc_id;
+                that.edit = true;
+            },
+            deleteCard: (item) => {
+                if(confirm('Are you sure?')) {
+                jQuery.ajax({
+                    url: '/home/ajax/deleteCard',
+                    type: 'post',
+                    data: { doc_id : item.doc_id},
+                    success: function (res) {
+                        //let index = (that.cards).findIndex(x => x.doc_id === item.doc_id)
+
+                        that.cards = (that.cards).filter(arr => arr.doc_id !== item.doc_id)
+                        that.showToast(res.success_msg);
+                    },
+                    dataType: 'json'
+                })
+                }
+            },
+            cardSubmit: () => {
+                const body = {
+                    name: that.name,
+                    category: that.category,
+                    content: that.content,
+                    doc_id : that.doc_id,
+                }
+               
+                if(that.doc_id && that.edit == true) {
+                    jQuery.ajax({
+                        url: '/home/ajax/editCard',
+                        type: 'post',
+                        data: body,
+                        success: function (res) {
+                            if (res.success == 1) {
+                                that.error = 0;
+                                that.error_msg = '';
+                                that.getCards();
+
+                                $('#modal').modal('hide');
+                                that.showToast(res.success_msg);
+                            } else if (res.error == 1) {
+                                that.form.error = 1;
+                                that.form.error_msg = res.error_msg;
+                            }
+                        },
+                        dataType: 'json'
+                    })
+                    return true;
+                }
+                    jQuery.ajax({
+                    url: '/home/ajax/submitCard',
+                    type: 'post',
+                    data: body,
+                    success: function (res) {
+                        if(res.success == 1) {
+                          that.error = 0;
+                          that.error_msg = '';
+                          that.getCards();
+                            
+                            $('#modal').modal('hide');
+                            that.showToast(res.success_msg);
+                        } else if( res.error == 1) {
+                            that.form.error = 1;
+                            that.form.error_msg = res.error_msg;
+                        }
+                    },
+                    dataType: 'json'
+                })
+
+            }
+        }
+
+    }).mount('#app');
+</script>
+
+{% endblock %}
