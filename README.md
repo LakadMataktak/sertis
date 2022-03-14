@@ -7,9 +7,10 @@ v17.4.0
 ## Available Scripts
 
 In the project directory, you can run:
-
+### `npm install` 
+Install dependencies into the project folder
 ### `npm run dev`
-Runs the app in the production mode.\
+Runs the app in the development mode.\
 ### `npm run lint`
 Check syntax errors
 ### `npm start`
